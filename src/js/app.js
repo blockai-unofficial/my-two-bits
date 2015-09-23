@@ -42,7 +42,7 @@ module.exports = function(options) {
   */
 
   var verifyTip = function(req, res, next) {
-    var verifiedAddress = req.verifiedAddress;
+    var verifiedAddress = req.verifiedAddress; // from express-common-wallet middleware
     var sha1 = req.params.sha1;
     if (sha1 && verifiedAddress) {
       var network = req.headers["x-common-wallet-network"];
@@ -66,11 +66,11 @@ module.exports = function(options) {
   var verifyAddressAndTip = function(req, res, next) {
     var sha1 = req.params.sha1;
     verifyTip(req, res, function() {
-      var verifiedAddress = req.verifiedAddress;
+      var verifiedAddress = req.verifiedAddress; // from express-common-wallet middleware
       if (!verifiedAddress) {
         return res.status(401).send("Unauthorized");
       } 
-      var tipVerified = req.tipVerified;
+      var tipVerified = req.tipVerified; // from verifyTip middleware
       if (!tipVerified) {
         return res.status(401).send("Missing Opentip: " + sha1);
       }
@@ -97,8 +97,8 @@ module.exports = function(options) {
 
   app.post("/comments/:sha1", verifyAddressAndTip, function(req, res) {
     var sha1 = req.params.sha1;
-    var verifiedAddress = req.verifiedAddress;
-    var network = req.headers["x-common-wallet-network"] == "testnet" ? bitcoin.networks.testnet : bitcoin.networks.bitcoin;
+    var verifiedAddress = req.verifiedAddress; // from express-common-wallet middleware
+    var network = req.headers["x-common-wallet-network"] == "testnet" ? bitcoin.networks.testnet : bitcoin.networks.bitcoin; // from express-common-wallet middleware
     var commentBody = req.body.commentBody;
     var signedCommentBody = req.body.signedCommentBody;
     var commonBodyIsVerified;
