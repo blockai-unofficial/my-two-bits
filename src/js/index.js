@@ -54,13 +54,22 @@ var commonWalletNonceStore = {
 ddb.createTable(COMMENTS_TABLE_NAME, { hash: ['sha1', ddb.schemaTypes().string] }, { read: 10, write: 10 }, function() {});
 var commentsStore = {
   get: function(sha1, callback) {
-    ddb.getItem(COMMENTS_TABLE_NAME, address, null, {}, function(err, resp, cap) {
-      var comments = resp.comments;
+    ddb.getItem(COMMENTS_TABLE_NAME, sha1, null, {}, function(err, resp, cap) {
+      var commentsJSON;
+      if (!resp || !resp.commentsJSON) {
+        commentsJSON = "[]";
+      }
+      else {
+        commentsJSON = resp.commentsJSON;
+      }
+      var comments = JSON.parse(commentsJSON);
       callback(err, comments);
     });
   },
   set: function(sha1, comments, callback) {
-    ddb.putItem(COMMENTS_TABLE_NAME, {sha1:sha1, comments:comments}, {}, function(err, resp, cap) {
+    var commentsJSON = JSON.stringify(comments);
+    ddb.putItem(COMMENTS_TABLE_NAME, {sha1:sha1, commentsJSON:commentsJSON}, {}, function(err, resp, cap) {
+      console.log(err, resp, cap);
       callback(err, resp);
     });
   }

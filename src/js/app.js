@@ -9,17 +9,6 @@ module.exports = function(options) {
 
   /*
 
-    Open Publish state
-    ------------------
-
-  */
-
-  var openpublishState = require('openpublish-state')({
-    network: network
-  });
-
-  /*
-
     app
     ---
     express
@@ -35,7 +24,9 @@ module.exports = function(options) {
   var bodyParser = require('body-parser');
   var expressCommonWallet = require('express-common-wallet');
   var app = express();
-  app.use(cors());
+  app.use(cors({
+    exposedHeaders: ['x-common-wallet-address', 'x-common-wallet-nonce', 'x-common-wallet-network', 'x-common-wallet-signed-nonce', 'x-common-wallet-verified-address']
+  }));
   app.use(bodyParser());
   app.use("/", expressCommonWallet({
     commonWalletNonceStore: commonWalletNonceStore
@@ -54,6 +45,10 @@ module.exports = function(options) {
     var verifiedAddress = req.verifiedAddress;
     var sha1 = req.params.sha1;
     if (sha1 && verifiedAddress) {
+      var network = req.headers["x-common-wallet-network"];
+      var openpublishState = require('openpublish-state')({
+        network: network
+      });
       openpublishState.findTipsByUser({address: verifiedAddress}, function(err, tips) {
         tips.forEach(function(tip) {
           if (tip.opendoc_sha1 === sha1) {
@@ -124,7 +119,7 @@ module.exports = function(options) {
       comments.push(newComment);
       commentsStore.set(sha1, comments, function(err, receipt) {
         if (err) {
-          res.status(500).send("Error");
+          return res.status(500).send("Error");
         }
         res.status(200).send("ok");
       });

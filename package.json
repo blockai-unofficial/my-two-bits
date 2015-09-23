@@ -16,7 +16,7 @@
     "express-common-wallet": "^0.0.2",
     "mem-common-blockchain": "^0.0.2",
     "node-env-file": "^0.1.7",
-    "openpublish-state": "^0.0.8",
+    "openpublish-state": "^0.2.0",
     "request": "^2.61.0",
     "secure-random": "^1.1.1",
     "shasum": "^1.0.1",
