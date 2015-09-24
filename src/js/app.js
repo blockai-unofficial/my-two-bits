@@ -96,6 +96,16 @@ module.exports = function(options) {
     });
   });
 
+  app.get("/batch_comments_count/:sha1s",  function(req, res) {
+    var sha1s = req.params.sha1s.split(",");
+    commentsStore.batchGetCount(sha1s, function(err, commentCounts) {
+      if (err) {
+        res.status(500).send("Error");
+      }
+      res.status(200).send(commentCounts);
+    });
+  });
+
   app.get("/comments/:sha1", verifyAddressAndTip, function(req, res) {
     var sha1 = req.params.sha1;
     commentsStore.get(sha1, function(err, comments) {
