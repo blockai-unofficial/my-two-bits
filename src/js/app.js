@@ -92,7 +92,7 @@ module.exports = function(options) {
       if (err) {
         res.status(500).send("Error");
       }
-      res.status(200).send(commentsCount);
+      res.status(200).send(commentsCount.toString());
     });
   });
 
