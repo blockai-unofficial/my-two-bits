@@ -85,6 +85,17 @@ module.exports = function(options) {
 
   */
 
+  app.get("/comments_count/:sha1",  function(req, res) {
+    var sha1 = req.params.sha1;
+    commentsStore.get(sha1, function(err, comments) {
+      var commentsCount = comments.length;
+      if (err) {
+        res.status(500).send("Error");
+      }
+      res.status(200).send(commentsCount);
+    });
+  });
+
   app.get("/comments/:sha1", verifyAddressAndTip, function(req, res) {
     var sha1 = req.params.sha1;
     commentsStore.get(sha1, function(err, comments) {
