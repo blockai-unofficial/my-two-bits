@@ -49,12 +49,16 @@ module.exports = function(options) {
       var openpublishState = require('openpublish-state')({
         network: network
       });
-      openpublishState.findTipsByUser({address: verifiedAddress}, function(err, tips) {
+      openpublishState.findDoc({sha1:sha1, includeTips: true}, function(err, openpublishDoc) {
+        var tips = openpublishDoc.tips;
         tips.forEach(function(tip) {
-          if (tip.opendoc_sha1 === sha1) {
+          if (tip.sourceAddresses[0] === verifiedAddress) {
             req.tipVerified = true;
           }
         });
+        if (openpublishDoc.sourceAddresses[0] === verifiedAddress) {
+          req.tipVerified = true;
+        }
         next();
       });
     }
