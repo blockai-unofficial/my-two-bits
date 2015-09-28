@@ -56,7 +56,7 @@ module.exports = function(options) {
             req.tipVerified = true;
           }
         });
-        if (openpublishDoc.sourceAddresses[0] === verifiedAddress) {
+        if (openpublishDoc && openpublishDoc.sourceAddresses && openpublishDoc.sourceAddresses[0] === verifiedAddress) {
           req.tipVerified = true;
         }
         next();
