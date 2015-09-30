@@ -52,6 +52,19 @@ var serverRootUrl = "http://localhost:" + port;
 
 var testCommonWallet = require('test-common-wallet');
 
+/*
+
+  On testnet,
+
+    Alice published the document dc724af18fbdd4e59189f5fe768a5f8311527050
+    Alice and Bob have tipped the document dc724af18fbdd4e59189f5fe768a5f8311527050
+
+  These were created in the openpublish test suite:
+
+    https://github.com/blockai/openpublish/blob/master/test/index-spec.js
+
+*/
+
 var aliceWallet = testCommonWallet({
   seed: "test",
   network: "testnet",
@@ -64,8 +77,9 @@ var bobWallet = testCommonWallet({
   commonBlockchain: commonBlockchain
 });
 
-test("Alice should get comments for sha1 tipped by address", function(t) {
-  var sha1 = 'dc724af18fbdd4e59189f5fe768a5f8311527050';
+var sha1 = 'dc724af18fbdd4e59189f5fe768a5f8311527050';
+
+test("Alice should get comments for sha1 tipped by address", function(t) {  
   var app = createApp();
   var server = app.listen(port, function() {
     aliceWallet.login(serverRootUrl, function(err, res, body) {
@@ -79,14 +93,14 @@ test("Alice should get comments for sha1 tipped by address", function(t) {
   });
 });
 
-test("Alice should not get comments for sha1 not tipped by address", function(t) {
-  var sha1 = 'xxx';
+test("Alice should get comments for sha1 not tipped by address", function(t) {
+  var badSha1 = 'xxx';
   var app = createApp();
   var server = app.listen(port, function() {
     aliceWallet.login(serverRootUrl, function(err, res, body) {
-      aliceWallet.request({host: serverRootUrl, path: "/comments/" + sha1 }, function(err, res, body) {
-        t.equal(res.statusCode, 401, "401 statusCode");
-        t.notEqual(body, "[]", "returned error message");
+      aliceWallet.request({host: serverRootUrl, path: "/comments/" + badSha1 }, function(err, res, body) {
+        t.equal(res.statusCode, 200, "200 statusCode");
+        t.equal(body, "[]", "returned error message");
         server.close();
         t.end();
       });
@@ -95,7 +109,6 @@ test("Alice should not get comments for sha1 not tipped by address", function(t)
 });
 
 test("Bob should post a new comment for sha1 tipped by address", function(t) {
-  var sha1 = 'dc724af18fbdd4e59189f5fe768a5f8311527050';
   var commentBody = "test123";
   bobWallet.signMessage(commentBody, function(err, signedCommentBody) {
     var app = createApp();
@@ -118,7 +131,6 @@ test("Bob should post a new comment for sha1 tipped by address", function(t) {
 });
 
 test("Bob not should post a new comment after posting 3 within 5 minutes", function(t) {
-  var sha1 = 'dc724af18fbdd4e59189f5fe768a5f8311527050';
   var commentTemplate = "testing comment - ";
   var commentBodies = [];
   for (var i = 0; i < 4; i++) {
@@ -157,7 +169,6 @@ test("Bob not should post a new comment after posting 3 within 5 minutes", funct
 });
 
 test("Bob should not post an empty comment for sha1 tipped by address", function(t) {
-  var sha1 = 'dc724af18fbdd4e59189f5fe768a5f8311527050';
   var commentBody = "";
   bobWallet.signMessage(commentBody, function(err, signedCommentBody) {
     var app = createApp();
@@ -176,7 +187,6 @@ test("Bob should not post an empty comment for sha1 tipped by address", function
 });
 
 test("Alice should not post a new comment without a signature for sha1 tipped by address", function(t) {
-  var sha1 = 'dc724af18fbdd4e59189f5fe768a5f8311527050';
   var commentBody = "test123";
   var signedCommentBody = "bunk";
   var app = createApp();
@@ -197,7 +207,6 @@ test("Alice should not post a new comment without a signature for sha1 tipped by
 });
 
 test("Bob should post a new comment for sha1 tipped by address and get a list of comments", function(t) {
-  var sha1 = 'dc724af18fbdd4e59189f5fe768a5f8311527050';
   var commentBody = "testing 123";
   bobWallet.signMessage(commentBody, function(err, signedCommentBody) {
     var app = createApp();

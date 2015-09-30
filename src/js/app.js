@@ -19,6 +19,11 @@ module.exports = function(options) {
 
   */
 
+  var defaultCommentSettings = {
+    tipToComment: true,
+    tipToRead: false
+  }
+
   var express = require('express');
   var cors = require('cors');
   var bodyParser = require('body-parser');
@@ -112,7 +117,17 @@ module.exports = function(options) {
     });
   });
 
-  app.get("/comments/:sha1", verifyAddressAndTip, function(req, res) {
+  var getCommentsMiddleware = function(req, res, next) {
+    var commentSettings = defaultCommentSettings;
+    if (commentSettings.tipToRead) {
+      verifyAddressAndTip(req, res, next);
+    }
+    else {
+      next();
+    }
+  };
+
+  app.get("/comments/:sha1", getCommentsMiddleware, function(req, res) {
     var sha1 = req.params.sha1;
     commentsStore.get(sha1, function(err, comments) {
       if (err) {
@@ -130,13 +145,19 @@ module.exports = function(options) {
     message: "Too many comment posts, please try again later."
   });
 
-  var postMiddleware = function(req, res, next) {    
-    verifyAddressAndTip(req, res, function() {
+  var postCommentMiddleware = function(req, res, next) {    
+    var commentSettings = defaultCommentSettings;
+    if (commentSettings.tipToComment) {
+      verifyAddressAndTip(req, res, function() {
+        postCommentLimiter(req, res, next);
+      });
+    }
+    else {
       postCommentLimiter(req, res, next);
-    });
+    }
   };
 
-  app.post("/comments/:sha1", postMiddleware, function(req, res) {
+  app.post("/comments/:sha1", postCommentMiddleware, function(req, res) {
     var commentBody = req.body.commentBody;
     if (commentBody.length === 0) {
       return res.status(400).send("Empty Comment");
