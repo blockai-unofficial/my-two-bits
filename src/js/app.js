@@ -121,10 +121,13 @@ module.exports = function(options) {
   });
 
   app.post("/comments/:sha1", verifyAddressAndTip, function(req, res) {
+    var commentBody = req.body.commentBody;
+    if (commentBody.length === 0) {
+      return res.status(400).send("Empty Comment");
+    };
     var sha1 = req.params.sha1;
     var verifiedAddress = req.verifiedAddress; // from express-common-wallet middleware
     var network = req.headers["x-common-wallet-network"] == "testnet" ? bitcoin.networks.testnet : bitcoin.networks.bitcoin; // from express-common-wallet middleware
-    var commentBody = req.body.commentBody;
     var signedCommentBody = req.body.signedCommentBody;
     var commonBodyIsVerified;
     try {

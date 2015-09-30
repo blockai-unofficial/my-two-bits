@@ -46,17 +46,23 @@ var serverRootUrl = "http://localhost:" + port;
 
 var testCommonWallet = require('test-common-wallet');
 
-var commonWallet = testCommonWallet({
+var aliceWallet = testCommonWallet({
   seed: "test",
   network: "testnet",
   commonBlockchain: commonBlockchain
 });
 
-test("should get comments for sha1 tipped by address", function(t) {
-  var sha1 = '2dd0b83677ac2271daab79782f0b9dcb4038d659';
+var bobWallet = testCommonWallet({
+  seed: "test1",
+  network: "testnet",
+  commonBlockchain: commonBlockchain
+});
+
+test("Alice should get comments for sha1 tipped by address", function(t) {
+  var sha1 = 'dc724af18fbdd4e59189f5fe768a5f8311527050';
   var server = app.listen(port, function() {
-    commonWallet.login(serverRootUrl, function(err, res, body) {
-      commonWallet.request({host: serverRootUrl, path: "/comments/" + sha1 }, function(err, res, body) {
+    aliceWallet.login(serverRootUrl, function(err, res, body) {
+      aliceWallet.request({host: serverRootUrl, path: "/comments/" + sha1 }, function(err, res, body) {
         t.equal(res.statusCode, 200, "200 statusCode");
         t.equal(body, "[]", "returned empty comments");
         server.close();
@@ -66,11 +72,11 @@ test("should get comments for sha1 tipped by address", function(t) {
   });
 });
 
-test("should not get comments for sha1 not tipped by address", function(t) {
+test("Alice should not get comments for sha1 not tipped by address", function(t) {
   var sha1 = 'xxx';
   var server = app.listen(port, function() {
-    commonWallet.login(serverRootUrl, function(err, res, body) {
-      commonWallet.request({host: serverRootUrl, path: "/comments/" + sha1 }, function(err, res, body) {
+    aliceWallet.login(serverRootUrl, function(err, res, body) {
+      aliceWallet.request({host: serverRootUrl, path: "/comments/" + sha1 }, function(err, res, body) {
         t.equal(res.statusCode, 401, "401 statusCode");
         t.notEqual(body, "[]", "returned error message");
         server.close();
@@ -80,18 +86,18 @@ test("should not get comments for sha1 not tipped by address", function(t) {
   });
 });
 
-test("should post a new comment for sha1 tipped by address", function(t) {
-  var sha1 = '2dd0b83677ac2271daab79782f0b9dcb4038d659';
+test("Bob should post a new comment for sha1 tipped by address", function(t) {
+  var sha1 = 'dc724af18fbdd4e59189f5fe768a5f8311527050';
   var commentBody = "test123";
-  commonWallet.signMessage(commentBody, function(err, signedCommentBody) {
+  bobWallet.signMessage(commentBody, function(err, signedCommentBody) {
     var server = app.listen(port, function() {
-      commonWallet.login(serverRootUrl, function(err, res, body) {
-        commonWallet.request({host: serverRootUrl, path: "/comments/" + sha1, method:"POST", form: {"commentBody": commentBody, "signedCommentBody": signedCommentBody} }, function(err, res, body) {
+      bobWallet.login(serverRootUrl, function(err, res, body) {
+        bobWallet.request({host: serverRootUrl, path: "/comments/" + sha1, method:"POST", form: {"commentBody": commentBody, "signedCommentBody": signedCommentBody} }, function(err, res, body) {
           t.equal(res.statusCode, 200, "200 statusCode");
           t.equal(body, "ok", "should be ok");
           commentsStore.get(sha1, function(err, comments) {
             t.equal(comments[0].commentBody, commentBody, "updated store with proper commentBody");
-            t.equal(comments[0].address, commonWallet.address, "updated store with proper address");
+            t.equal(comments[0].address, bobWallet.address, "updated store with proper address");
             resetCommentsStore();
             server.close();
             t.end();
@@ -102,13 +108,31 @@ test("should post a new comment for sha1 tipped by address", function(t) {
   });
 });
 
-test("should not post a new comment without a signature for sha1 tipped by address", function(t) {
-  var sha1 = '2dd0b83677ac2271daab79782f0b9dcb4038d659';
+test("Bob should not post an empty comment for sha1 tipped by address", function(t) {
+  var sha1 = 'dc724af18fbdd4e59189f5fe768a5f8311527050';
+  var commentBody = "";
+  bobWallet.signMessage(commentBody, function(err, signedCommentBody) {
+    var server = app.listen(port, function() {
+      bobWallet.login(serverRootUrl, function(err, res, body) {
+        bobWallet.request({host: serverRootUrl, path: "/comments/" + sha1, method:"POST", form: {"commentBody": commentBody, "signedCommentBody": signedCommentBody} }, function(err, res, body) {
+          t.equal(res.statusCode, 400, "400 statusCode");
+          t.notEqual(body, "ok", "should not be ok");
+          resetCommentsStore();
+          server.close();
+          t.end();
+        });
+      });
+    });
+  });
+});
+
+test("Alice should not post a new comment without a signature for sha1 tipped by address", function(t) {
+  var sha1 = 'dc724af18fbdd4e59189f5fe768a5f8311527050';
   var commentBody = "test123";
   var signedCommentBody = "bunk";
   var server = app.listen(port, function() {
-    commonWallet.login(serverRootUrl, function(err, res, body) {
-      commonWallet.request({host: serverRootUrl, path: "/comments/" + sha1, method:"POST", form: {"commentBody": commentBody, "signedCommentBody": signedCommentBody} }, function(err, res, body) {
+    aliceWallet.login(serverRootUrl, function(err, res, body) {
+      aliceWallet.request({host: serverRootUrl, path: "/comments/" + sha1, method:"POST", form: {"commentBody": commentBody, "signedCommentBody": signedCommentBody} }, function(err, res, body) {
         t.equal(res.statusCode, 401, "401 statusCode");
         t.notEqual(body, "ok", "should not be ok");
         commentsStore.get(sha1, function(err, comments) {
@@ -122,20 +146,20 @@ test("should not post a new comment without a signature for sha1 tipped by addre
   });
 });
 
-test("should post a new comment for sha1 tipped by address and get a list of comments", function(t) {
-  var sha1 = '2dd0b83677ac2271daab79782f0b9dcb4038d659';
-  var commentBody = "test123";
-  commonWallet.signMessage(commentBody, function(err, signedCommentBody) {
+test("Bob should post a new comment for sha1 tipped by address and get a list of comments", function(t) {
+  var sha1 = 'dc724af18fbdd4e59189f5fe768a5f8311527050';
+  var commentBody = "testing 123";
+  bobWallet.signMessage(commentBody, function(err, signedCommentBody) {
     var server = app.listen(port, function() {
-      commonWallet.login(serverRootUrl, function(err, res, body) {
-        commonWallet.request({host: serverRootUrl, path: "/comments/" + sha1, method:"POST", form: {"commentBody": commentBody, "signedCommentBody":signedCommentBody} }, function(err, res, body) {
+      bobWallet.login(serverRootUrl, function(err, res, body) {
+        bobWallet.request({host: serverRootUrl, path: "/comments/" + sha1, method:"POST", form: {"commentBody": commentBody, "signedCommentBody":signedCommentBody} }, function(err, res, body) {
           t.equal(res.statusCode, 200, "200 statusCode");
           t.equal(body, "ok", "should be ok");
-          commonWallet.request({host: serverRootUrl, path: "/comments/" + sha1 }, function(err, res, body) {
+          bobWallet.request({host: serverRootUrl, path: "/comments/" + sha1 }, function(err, res, body) {
             t.equal(res.statusCode, 200, "200 statusCode");
             var comments = JSON.parse(body);
             t.equal(comments[0].commentBody, commentBody, "returned comments with proper commentBody");
-            t.equal(comments[0].address, commonWallet.address, "returned comments with proper address");
+            t.equal(comments[0].address, bobWallet.address, "returned comments with proper address");
             resetCommentsStore();
             server.close();
             t.end();
