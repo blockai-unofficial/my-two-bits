@@ -22,6 +22,7 @@ module.exports = function(options) {
   var express = require('express');
   var cors = require('cors');
   var bodyParser = require('body-parser');
+  var rateLimit = require('express-rate-limit');
   var expressCommonWallet = require('express-common-wallet');
   var app = express();
   app.use(cors({
@@ -31,6 +32,7 @@ module.exports = function(options) {
   app.use("/", expressCommonWallet({
     commonWalletNonceStore: commonWalletNonceStore
   }));
+  app.enable('trust proxy');
 
   /*
 
@@ -120,7 +122,21 @@ module.exports = function(options) {
     });
   });
 
-  app.post("/comments/:sha1", verifyAddressAndTip, function(req, res) {
+  var postCommentLimiter = rateLimit({
+    windowMs: 60 * 1000 * 5, // 3 minutes
+    max: 3,
+    delayAfter: 0,
+    delayMs: 0,
+    message: "Too many comment posts, please try again later."
+  });
+
+  var postMiddleware = function(req, res, next) {    
+    verifyAddressAndTip(req, res, function() {
+      postCommentLimiter(req, res, next);
+    });
+  };
+
+  app.post("/comments/:sha1", postMiddleware, function(req, res) {
     var commentBody = req.body.commentBody;
     if (commentBody.length === 0) {
       return res.status(400).send("Empty Comment");
