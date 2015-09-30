@@ -79,6 +79,35 @@ var bobWallet = testCommonWallet({
 
 var sha1 = 'dc724af18fbdd4e59189f5fe768a5f8311527050';
 
+test("Alice should verify for sha1 tipped by address", function(t) {  
+  var app = createApp();
+  var server = app.listen(port, function() {
+    aliceWallet.login(serverRootUrl, function(err, res, body) {
+      aliceWallet.request({host: serverRootUrl, path: "/verify/" + sha1 }, function(err, res, body) {
+        t.equal(res.statusCode, 200, "200 statusCode");
+        t.equal(body, "ok", "should be ok");
+        server.close();
+        t.end();
+      });
+    })
+  });
+});
+
+test("Alice should not verify for sha1 not tipped by address", function(t) {
+  var badSha1 = 'xxx';
+  var app = createApp();
+  var server = app.listen(port, function() {
+    aliceWallet.login(serverRootUrl, function(err, res, body) {
+      aliceWallet.request({host: serverRootUrl, path: "/verify/" + badSha1 }, function(err, res, body) {
+        t.equal(res.statusCode, 401, "401 statusCode");
+        t.notEqual(body, "ok", "should not be ok");
+        server.close();
+        t.end();
+      });
+    })
+  });
+});
+
 test("Alice should get comments for sha1 tipped by address", function(t) {  
   var app = createApp();
   var server = app.listen(port, function() {

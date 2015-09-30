@@ -96,6 +96,10 @@ module.exports = function(options) {
 
   */
 
+  app.get("/verify/:sha1", verifyAddressAndTip, function(req, res) {
+    res.status(200).send("ok");
+  });
+
   app.get("/comments_count/:sha1",  function(req, res) {
     var sha1 = req.params.sha1;
     commentsStore.get(sha1, function(err, comments) {
